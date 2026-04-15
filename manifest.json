@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Trello Next Step",
+  "description": "View and check off Trello checklist items directly from the board",
+  "version": "1.0.0",
+  "icons": {
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_icon": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://trello.com/*"],
+      "js": ["src/content/index.ts"],
+      "css": ["src/content/styles.css"],
+      "run_at": "document_start"
+    }
+  ],
+  "host_permissions": [
+    "*://trello.com/*"
+  ],
+  "permissions": [
+    "storage"
+  ]
+}

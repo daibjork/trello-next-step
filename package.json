@@ -1,0 +1,17 @@
+{
+  "name": "trello-next-step",
+  "version": "1.0.0",
+  "description": "View and check off Trello checklist items directly from the board",
+  "private": true,
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.23",
+    "@types/chrome": "^0.0.268",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11"
+  }
+}

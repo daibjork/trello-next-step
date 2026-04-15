@@ -1,0 +1,208 @@
+/* ============================================================
+   Trello Next Step — Content Script Styles
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   Task list container
+   ---------------------------------------------------------- */
+
+.tns-task-list {
+  margin-top: 4px;
+}
+
+/* ----------------------------------------------------------
+   Checklist item row
+   ---------------------------------------------------------- */
+
+.tns-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 0.7em;
+  font-size: 12px;
+  line-height: 1.4em;
+  color: #44546f;
+  font-family: Helvetica Neue, Arial, Helvetica, sans-serif;
+}
+
+/* ----------------------------------------------------------
+   Checkbox
+   ---------------------------------------------------------- */
+
+.tns-checkbox {
+  position: relative;
+  flex-shrink: 0;
+  margin-top: -3px;
+  width: 14px;
+  height: 14px;
+  background-color: #ffffff;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 2px #8993a4;
+  transition: box-shadow 0.1s ease, background-color 0.1s ease;
+  cursor: pointer;
+}
+
+.tns-checkbox::after {
+  content: "\2714";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #0052cc;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.tns-checkbox:hover {
+  box-shadow: inset 0 0 0 2px #0052cc;
+}
+
+.tns-checkbox:hover::after {
+  opacity: 0.6;
+}
+
+/* ----------------------------------------------------------
+   Label
+   ---------------------------------------------------------- */
+
+.tns-label {
+  display: inline;
+  line-height: 1.4em;
+}
+
+.tns-label .tns-link {
+  text-decoration: underline;
+  color: #0052cc;
+}
+
+/* ----------------------------------------------------------
+   Completed item
+   ---------------------------------------------------------- */
+
+.tns-item.tns-complete .tns-label {
+  text-decoration: line-through;
+  color: #a5adba;
+}
+
+.tns-item.tns-complete .tns-checkbox {
+  background-color: #0052cc;
+  box-shadow: inset 0 0 0 2px #0052cc;
+}
+
+.tns-item.tns-complete .tns-checkbox::after {
+  opacity: 1;
+  color: #ffffff;
+}
+
+/* ----------------------------------------------------------
+   Checking animation (in progress)
+   ---------------------------------------------------------- */
+
+.tns-item.tns-checking .tns-checkbox {
+  background-color: #0052cc;
+  box-shadow: inset 0 0 0 2px #0052cc;
+}
+
+.tns-item.tns-checking .tns-checkbox::after {
+  opacity: 1;
+  color: #ffffff;
+}
+
+.tns-item.tns-checking .tns-label {
+  text-decoration: line-through;
+  color: #a5adba;
+}
+
+/* ----------------------------------------------------------
+   Dark mode — Trello uses .dark on <html>
+   ---------------------------------------------------------- */
+
+.dark .tns-item,
+[data-color-mode="dark"] .tns-item {
+  color: #b6c2cf;
+}
+
+.dark .tns-checkbox,
+[data-color-mode="dark"] .tns-checkbox {
+  background-color: #2c3e5d;
+  box-shadow: inset 0 0 0 2px #a6b5c9;
+}
+
+.dark .tns-checkbox:hover,
+[data-color-mode="dark"] .tns-checkbox:hover {
+  box-shadow: inset 0 0 0 2px #579dff;
+  background-color: #1a3055;
+}
+
+.dark .tns-checkbox::after,
+[data-color-mode="dark"] .tns-checkbox::after {
+  color: #ffffff;
+}
+
+.dark .tns-item.tns-complete .tns-checkbox,
+[data-color-mode="dark"] .tns-item.tns-complete .tns-checkbox {
+  background-color: #579dff;
+  box-shadow: inset 0 0 0 2px #579dff;
+}
+
+.dark .tns-item.tns-complete .tns-label,
+[data-color-mode="dark"] .tns-item.tns-complete .tns-label {
+  color: #6b778c;
+}
+
+.dark .tns-label .tns-link,
+[data-color-mode="dark"] .tns-label .tns-link {
+  color: #579dff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .tns-item { color: #b6c2cf; }
+  .tns-checkbox { background-color: #2c3e5d; box-shadow: inset 0 0 0 2px #a6b5c9; }
+  .tns-checkbox:hover { box-shadow: inset 0 0 0 2px #579dff; background-color: #1a3055; }
+  .tns-checkbox::after { color: #ffffff; }
+  .tns-item.tns-complete .tns-checkbox { background-color: #579dff; box-shadow: inset 0 0 0 2px #579dff; }
+  .tns-item.tns-complete .tns-label { color: #6b778c; }
+  .tns-label .tns-link { color: #579dff; }
+}
+
+/* ----------------------------------------------------------
+   Toolbar button
+   ---------------------------------------------------------- */
+
+#tns-btn {
+  transform: translate3d(0, 0, 0);
+}
+
+.tns-spinner {
+  display: none;
+}
+
+#tns-btn.tns-loading .tns-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #ffffff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: tns-spin 0.8s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+@keyframes tns-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ----------------------------------------------------------
+   Mode selector popup
+   ---------------------------------------------------------- */
+
+.tns-popup {
+  position: absolute;
+  z-index: 9999;
+}
