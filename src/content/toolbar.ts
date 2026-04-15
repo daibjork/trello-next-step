@@ -83,16 +83,31 @@ export function installToolbar(onModeChange: () => void): void {
   btn.innerHTML = `
     <span class="board-header-btn-text">
       <span class="tns-spinner"></span>
+      <svg class="tns-btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+        <path fill-rule="evenodd" d="M1 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2zm2-.5a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5zm9.326 2.98-5 6a.75.75 0 0 1-1.152 0l-2.5-3 1.152-.96L6.75 9.828l4.424-5.308z" clip-rule="evenodd"/>
+      </svg>
       <span class="tns-btn-label">Next Step</span>
     </span>`
 
   btn.addEventListener('click', (e) => {
     e.preventDefault()
+    e.stopPropagation()
     const existing = document.getElementById(POPUP_ID)
     if (existing) {
       existing.remove()
     } else {
-      document.body.appendChild(buildPopup(btn, onModeChange))
+      const popup = buildPopup(btn, onModeChange)
+      document.body.appendChild(popup)
+
+      // Close when clicking outside
+      setTimeout(() => {
+        document.addEventListener('click', function closePopup(evt) {
+          if (!popup.contains(evt.target as Node)) {
+            popup.remove()
+            document.removeEventListener('click', closePopup)
+          }
+        })
+      }, 0)
     }
   })
 

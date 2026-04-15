@@ -74,9 +74,15 @@ export function renderItems(
   taskList.innerHTML = newHtml
 
   taskList.querySelectorAll(`.${CHECKBOX_CLASS}`).forEach(checkbox => {
-    checkbox.addEventListener('click', () => onCheck(checkbox))
+    checkbox.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      onCheck(checkbox)
+    })
     checkbox.addEventListener('keydown', (e) => {
       if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
+        e.preventDefault()
+        e.stopPropagation()
         onCheck(checkbox)
       }
     })

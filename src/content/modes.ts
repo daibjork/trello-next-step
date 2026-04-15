@@ -73,39 +73,39 @@ function onePerCard(checklists: TrelloChecklist[], showCompleted: boolean): Chec
 
 export const MODES: DisplayMode[] = [
   {
-    label: 'Mode: Hidden',
-    description: "Don't display next steps",
+    label: 'Hidden',
+    description: "Don't display any checklist items",
     handler: () => [],
   },
   {
-    label: 'Mode: One per card',
-    description: 'Display first next step of each card',
+    label: 'Show next step per card',
+    description: 'Display the first incomplete checklist item of each card',
     handler: onePerCard,
   },
   {
-    label: 'Mode: First checklist',
-    description: "Display next steps of each card's 1st checklist",
+    label: 'Show next steps on first checklist',
+    description: "Display all incomplete items from each card's first checklist",
     handler: firstChecklist,
   },
   {
-    label: 'Mode: First checklist (incl. completed)',
-    description: "Display next steps of each card's 1st checklist (including completed)",
+    label: 'Show next steps on first checklist (incl. completed)',
+    description: "Display all items from each card's first checklist, including completed ones",
     showCompleted: true,
     handler: firstChecklist,
   },
   {
-    label: 'Mode: One per checklist',
-    description: 'Display first next step of each checklist',
+    label: 'Show next step per checklist',
+    description: 'Display the first incomplete item from each checklist',
     handler: onePerChecklist,
   },
   {
-    label: 'Mode: All steps',
-    description: 'Display all unchecked checklist items',
+    label: 'Show all next steps',
+    description: 'Display all incomplete checklist items',
     handler: allSteps,
   },
   {
-    label: 'Mode: All steps (incl. completed)',
-    description: 'Display all checklist items',
+    label: 'Show all next steps (incl. completed)',
+    description: 'Display all checklist items, including completed ones',
     showCompleted: true,
     handler: allSteps,
   },
