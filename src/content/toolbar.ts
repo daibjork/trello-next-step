@@ -3,17 +3,114 @@ import { getMode, setMode } from './prefs'
 
 const BTN_ID = 'tns-btn'
 const POPUP_ID = 'tns-popup'
+const TOOLTIP_ID = 'tns-toolbar-tooltip'
 
-function getVersion(): string {
-  return window.chrome?.runtime?.getManifest()?.version ?? 'dev'
+// ----------------------------------------------------------
+// Tooltip
+// ----------------------------------------------------------
+
+function ensureTooltipStyles(): void {
+  if (document.getElementById('tns-tooltip-styles')) return
+  const style = document.createElement('style')
+  style.id = 'tns-tooltip-styles'
+  style.textContent = `
+    #${TOOLTIP_ID} {
+      position: fixed;
+      z-index: 99999;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.4;
+      pointer-events: none;
+      white-space: nowrap;
+      background: var(--ds-background-neutral-bold, #292A2E);
+      color: var(--ds-text-inverse, #FFFFFF);
+      opacity: 0;
+      transition: opacity 0.1s ease;
+    }
+    #${TOOLTIP_ID}.tns-tooltip-visible {
+      opacity: 1;
+    }
+  `
+  document.head.appendChild(style)
 }
+
+function getOrCreateTooltip(): HTMLElement {
+  let tooltip = document.getElementById(TOOLTIP_ID)
+  if (!tooltip) {
+    tooltip = document.createElement('div')
+    tooltip.id = TOOLTIP_ID
+    tooltip.role = 'tooltip'
+    document.body.appendChild(tooltip)
+  }
+  return tooltip
+}
+
+function positionAndShow(tooltip: HTMLElement, anchor: HTMLElement): void {
+  tooltip.textContent = 'Next Step'
+  document.body.appendChild(tooltip)
+
+  const rect = anchor.getBoundingClientRect()
+  const tooltipRect = tooltip.getBoundingClientRect()
+
+  let left = rect.left + rect.width / 2 - tooltipRect.width / 2
+  const top = rect.bottom + 6
+
+  // Clamp to viewport
+  left = Math.max(8, Math.min(left, window.innerWidth - tooltipRect.width - 8))
+
+  tooltip.style.left = `${left}px`
+  tooltip.style.top = `${top}px`
+  tooltip.classList.add('tns-tooltip-visible')
+}
+
+function hideTooltip(): void {
+  const tooltip = document.getElementById(TOOLTIP_ID)
+  if (tooltip) tooltip.classList.remove('tns-tooltip-visible')
+}
+
+function trelloTooltipActive(): boolean {
+  const container = document.querySelector('.tooltip-container')
+  return !!container && container.children.length > 0
+}
+
+let tooltipTimer: ReturnType<typeof setTimeout> | null = null
+
+function setupTooltip(btn: HTMLElement): void {
+  ensureTooltipStyles()
+
+  btn.addEventListener('mouseenter', () => {
+    const delay = trelloTooltipActive() ? 0 : 500
+    tooltipTimer = setTimeout(() => {
+      const tooltip = getOrCreateTooltip()
+      positionAndShow(tooltip, btn)
+    }, delay)
+  })
+
+  btn.addEventListener('mouseleave', () => {
+    if (tooltipTimer) {
+      clearTimeout(tooltipTimer)
+      tooltipTimer = null
+    }
+    hideTooltip()
+  })
+
+  btn.addEventListener('click', () => {
+    if (tooltipTimer) {
+      clearTimeout(tooltipTimer)
+      tooltipTimer = null
+    }
+    hideTooltip()
+  })
+}
+
+// ----------------------------------------------------------
+// Popup
+// ----------------------------------------------------------
 
 export function isToolbarInstalled(): boolean {
   return !!document.getElementById(BTN_ID)
-}
-
-export function setLoading(loading: boolean): void {
-  document.getElementById(BTN_ID)?.classList.toggle('tns-loading', loading)
 }
 
 function buildPopup(btn: HTMLElement, onModeChange: () => void): HTMLElement {
@@ -41,7 +138,6 @@ function buildPopup(btn: HTMLElement, onModeChange: () => void): HTMLElement {
       </ul>
     </div>`
 
-  // Position below button
   const rect = btn.getBoundingClientRect()
   const width = 320
   popup.style.cssText = `
@@ -51,13 +147,11 @@ function buildPopup(btn: HTMLElement, onModeChange: () => void): HTMLElement {
     width: ${width}px;
   `
 
-  // Close button
   popup.querySelector('#tns-popup-close')?.addEventListener('click', (e) => {
     e.preventDefault()
     popup.remove()
   })
 
-  // Mode items
   popup.querySelectorAll('.tns-mode-item').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault()
@@ -71,6 +165,10 @@ function buildPopup(btn: HTMLElement, onModeChange: () => void): HTMLElement {
   return popup
 }
 
+// ----------------------------------------------------------
+// Install
+// ----------------------------------------------------------
+
 export function installToolbar(onModeChange: () => void): void {
   const headerBtns = document.getElementsByClassName('board-header-btns')[0]
   if (!headerBtns) return
@@ -78,7 +176,6 @@ export function installToolbar(onModeChange: () => void): void {
   const btn = document.createElement('a')
   btn.id = BTN_ID
   btn.className = 'board-header-btn board-header-btn-without-icon'
-  btn.title = 'Trello Next Step — click to change display mode'
   btn.innerHTML = `
     <span class="board-header-btn-text">
       <svg class="tns-btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -86,6 +183,8 @@ export function installToolbar(onModeChange: () => void): void {
         <polyline points="4,8.5 6.5,11.5 12,5" stroke-width="2"/>
       </svg>
     </span>`
+
+  setupTooltip(btn)
 
   btn.addEventListener('click', (e) => {
     e.preventDefault()
@@ -97,7 +196,6 @@ export function installToolbar(onModeChange: () => void): void {
       const popup = buildPopup(btn, onModeChange)
       document.body.appendChild(popup)
 
-      // Close when clicking outside
       setTimeout(() => {
         document.addEventListener('click', function closePopup(evt) {
           if (!popup.contains(evt.target as Node)) {
@@ -111,3 +209,4 @@ export function installToolbar(onModeChange: () => void): void {
 
   headerBtns.appendChild(btn)
 }
+
