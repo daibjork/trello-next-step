@@ -193,6 +193,10 @@
   padding: 0 !important;
 }
 
+#tns-btn.tns-active {
+  color: rgb(23, 43, 77) !important;
+}
+
 .tns-btn-icon {
   display: block;
   margin: 0 auto;

@@ -192,7 +192,15 @@ export function installToolbar(onModeChange: () => void): void {
     const existing = document.getElementById(POPUP_ID)
     if (existing) {
       existing.remove()
+      btn.classList.remove('tns-active')
+      btn.style.removeProperty('--dynamic-button')
+      btn.style.removeProperty('--dynamic-button-hovered')
+      btn.style.removeProperty('--dynamic-text')
     } else {
+      btn.classList.add('tns-active')
+      btn.style.setProperty('--dynamic-button', 'rgb(220, 223, 228)')
+      btn.style.setProperty('--dynamic-button-hovered', '#FFFFFF')
+      btn.style.setProperty('--dynamic-text', 'rgb(23, 43, 77)')
       const popup = buildPopup(btn, onModeChange)
       document.body.appendChild(popup)
 
@@ -200,6 +208,10 @@ export function installToolbar(onModeChange: () => void): void {
         document.addEventListener('click', function closePopup(evt) {
           if (!popup.contains(evt.target as Node)) {
             popup.remove()
+            btn.classList.remove('tns-active')
+            btn.style.removeProperty('--dynamic-button')
+            btn.style.removeProperty('--dynamic-button-hovered')
+            btn.style.removeProperty('--dynamic-text')
             document.removeEventListener('click', closePopup)
           }
         })
