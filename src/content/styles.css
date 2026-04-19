@@ -176,17 +176,26 @@
    ---------------------------------------------------------- */
 
 #tns-btn {
-  transform: translate3d(0, 0, 0);
+  padding: 0 !important;
+  min-width: 0 !important;
+  width: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+#tns-btn .board-header-btn-text {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  padding: 0 !important;
 }
 
 .tns-btn-icon {
-  position: relative;
-  top: 0px;
-  margin-right: 5px;
-  vertical-align: middle;
-  width: 16px;
-  height: 16px;
-  opacity: 0.9;
+  display: block;
+  margin: 0 auto;
 }
 
 /* ----------------------------------------------------------
