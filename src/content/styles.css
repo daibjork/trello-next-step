@@ -189,26 +189,6 @@
   opacity: 0.9;
 }
 
-.tns-spinner {
-  display: none;
-}
-
-#tns-btn.tns-loading .tns-spinner {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border: 2px solid #ffffff;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: tns-spin 0.8s linear infinite;
-  margin-right: 6px;
-  vertical-align: middle;
-}
-
-@keyframes tns-spin {
-  to { transform: rotate(360deg); }
-}
-
 /* ----------------------------------------------------------
    Mode selector popup
    ---------------------------------------------------------- */
@@ -216,4 +196,14 @@
 .tns-popup {
   position: absolute;
   z-index: 9999;
+}
+
+.tns-mode-selected.tns-mode-selected {
+  background-color: #e9f2ff !important;
+  color: #0052cc !important;
+  font-weight: 500 !important;
+}
+
+.tns-mode-selected.tns-mode-selected .sub-name {
+  color: #0065ff !important;
 }

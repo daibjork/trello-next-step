@@ -2,7 +2,7 @@ import { fetchCards, fetchChecklists, updateCheckItem, getToken, getBoardId } fr
 import { MODES } from './modes'
 import { getMode } from './prefs'
 import { findCardElement, renderItems, invalidateCard } from './renderer'
-import { isToolbarInstalled, installToolbar, setLoading } from './toolbar'
+import { isToolbarInstalled, installToolbar } from './toolbar'
 import type { CardData } from './types'
 
 // State
@@ -19,7 +19,6 @@ let lastUrl = window.location.href
 async function loadBoardData(refresh: boolean | { cardUrls: string[] }): Promise<void> {
   if (isRefreshing) return
   isRefreshing = true
-  setLoading(true)
 
   try {
     // Use cache for DOM-only re-renders
@@ -57,7 +56,6 @@ async function loadBoardData(refresh: boolean | { cardUrls: string[] }): Promise
     console.error('[TrelloNextStep] Failed to load board data:', err)
   } finally {
     isRefreshing = false
-    setLoading(false)
   }
 }
 
