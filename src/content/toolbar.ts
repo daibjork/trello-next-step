@@ -113,6 +113,17 @@ export function isToolbarInstalled(): boolean {
   return !!document.getElementById(BTN_ID)
 }
 
+function positionPopup(popup: HTMLElement, btn: HTMLElement): void {
+  const rect = btn.getBoundingClientRect()
+  const width = 320
+  popup.style.cssText = `
+    position: fixed;
+    top: ${rect.bottom + 6}px;
+    left: ${Math.min(rect.left, window.innerWidth - width - 8)}px;
+    width: ${width}px;
+  `
+}
+
 function buildPopup(btn: HTMLElement, onModeChange: () => void): HTMLElement {
   const popup = document.createElement('div')
   popup.id = POPUP_ID
@@ -138,17 +149,32 @@ function buildPopup(btn: HTMLElement, onModeChange: () => void): HTMLElement {
       </ul>
     </div>`
 
-  const rect = btn.getBoundingClientRect()
-  const width = 320
-  popup.style.cssText = `
-    position: absolute;
-    top: ${rect.bottom + window.scrollY + 6}px;
-    left: ${Math.min(rect.left, window.innerWidth - width - 8) + window.scrollX}px;
-    width: ${width}px;
-  `
+  positionPopup(popup, btn)
+
+  // Reposition on window resize, close if button is no longer visible
+  const onResize = () => {
+    const btnRect = btn.getBoundingClientRect()
+    if (btnRect.width === 0 || btnRect.height === 0) {
+      popup.dispatchEvent(new Event('tns-close'))
+      popup.remove()
+      btn.classList.remove('tns-active')
+      btn.style.removeProperty('--dynamic-button')
+      btn.style.removeProperty('--dynamic-button-hovered')
+      btn.style.removeProperty('--dynamic-text')
+    } else {
+      positionPopup(popup, btn)
+    }
+  }
+  window.addEventListener('resize', onResize)
+
+  // Clean up resize listener when popup is closed from outside
+  popup.addEventListener('tns-close', () => {
+    window.removeEventListener('resize', onResize)
+  })
 
   popup.querySelector('#tns-popup-close')?.addEventListener('click', (e) => {
     e.preventDefault()
+    window.removeEventListener('resize', onResize)
     popup.remove()
   })
 
@@ -158,6 +184,7 @@ function buildPopup(btn: HTMLElement, onModeChange: () => void): HTMLElement {
       const mode = parseInt((item as HTMLElement).dataset.mode ?? '0', 10)
       setMode(mode)
       onModeChange()
+      window.removeEventListener('resize', onResize)
       popup.remove()
     })
   })
@@ -207,6 +234,7 @@ export function installToolbar(onModeChange: () => void): void {
       setTimeout(() => {
         document.addEventListener('click', function closePopup(evt) {
           if (!popup.contains(evt.target as Node)) {
+            popup.dispatchEvent(new Event('tns-close'))
             popup.remove()
             btn.classList.remove('tns-active')
             btn.style.removeProperty('--dynamic-button')
