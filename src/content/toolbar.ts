@@ -183,9 +183,14 @@ function buildPopup(btn: HTMLElement, onModeChange: () => void): HTMLElement {
       e.preventDefault()
       const mode = parseInt((item as HTMLElement).dataset.mode ?? '0', 10)
       setMode(mode)
-      onModeChange()
       window.removeEventListener('resize', onResize)
       popup.remove()
+      // Clean up active state before triggering refresh
+      btn.classList.remove('tns-active')
+      btn.style.removeProperty('--dynamic-button')
+      btn.style.removeProperty('--dynamic-button-hovered')
+      btn.style.removeProperty('--dynamic-text')
+      onModeChange()
     })
   })
 
