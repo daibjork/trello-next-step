@@ -1,5 +1,6 @@
 node_modules/
 dist/
+_latest/
 *.local
 .DS_Store
 **/.DS_Store
