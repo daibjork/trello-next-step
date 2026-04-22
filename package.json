@@ -1,6 +1,6 @@
 {
   "name": "trello-next-step",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "View and check off Trello checklist items directly from the board",
   "private": true,
   "scripts": {
