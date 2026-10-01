@@ -222,17 +222,27 @@ function findShareAnchor(container: Element): Element | null {
   return anchor
 }
 
+// We sit before the created-date toolbar (another extension) when present,
+// otherwise before Share. Anchors are always "somewhere after us" rather than
+// "directly after us", so other extensions never fight us over the slot.
+function findPositionAnchors(container: Element): Element[] {
+  const createdDate = container.querySelector(':scope > #tcd-toolbar-wrap')
+  const share = findShareAnchor(container)
+  return [createdDate, share].filter((el): el is Element => !!el)
+}
+
+function isBefore(a: Element, b: Element): boolean {
+  return !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+}
+
 // Trello re-renders the header after load and can leave our button misplaced
 export function ensureToolbarPosition(): void {
   const wrapper = document.getElementById(BTN_ID)?.parentElement
   const container = wrapper?.parentElement
   if (!wrapper || !container) return
-  const shareAnchor = findShareAnchor(container)
-  // Only require "somewhere before Share", not "directly before". Other
-  // extensions place buttons there too, and demanding the exact slot makes
-  // them move each other back and forth forever.
-  if (shareAnchor && !(wrapper.compareDocumentPosition(shareAnchor) & Node.DOCUMENT_POSITION_FOLLOWING)) {
-    container.insertBefore(wrapper, shareAnchor)
+  const anchors = findPositionAnchors(container)
+  if (anchors.length && !anchors.every(anchor => isBefore(wrapper, anchor))) {
+    container.insertBefore(wrapper, anchors[0])
   }
 }
 
@@ -280,9 +290,9 @@ export function installToolbar(onModeChange: () => void): void {
     }
   })
 
-  const shareAnchor = findShareAnchor(headerBtns)
-  if (shareAnchor) {
-    headerBtns.insertBefore(wrapper, shareAnchor)
+  const [anchor] = findPositionAnchors(headerBtns)
+  if (anchor) {
+    headerBtns.insertBefore(wrapper, anchor)
   } else {
     headerBtns.appendChild(wrapper)
   }
