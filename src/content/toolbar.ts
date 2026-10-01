@@ -228,7 +228,10 @@ export function ensureToolbarPosition(): void {
   const container = wrapper?.parentElement
   if (!wrapper || !container) return
   const shareAnchor = findShareAnchor(container)
-  if (shareAnchor && wrapper.nextElementSibling !== shareAnchor) {
+  // Only require "somewhere before Share", not "directly before". Other
+  // extensions place buttons there too, and demanding the exact slot makes
+  // them move each other back and forth forever.
+  if (shareAnchor && !(wrapper.compareDocumentPosition(shareAnchor) & Node.DOCUMENT_POSITION_FOLLOWING)) {
     container.insertBefore(wrapper, shareAnchor)
   }
 }
