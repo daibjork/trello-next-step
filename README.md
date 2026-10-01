@@ -1,6 +1,6 @@
 # Trello Next Step
 
-View and check off Trello checklist items directly from the board — without opening each card.
+A Chrome extension that shows checklist items directly on your Trello cards and lets you check them off from the board — without opening each card.
 
 ## Features
 
@@ -20,7 +20,10 @@ View and check off Trello checklist items directly from the board — without op
 
 - Renders links and inline code in item names
 - Supports Trello's light and dark themes
-- Fast loading with parallel requests and in-memory caching
+
+## How it works
+
+When you open a board, the extension loads the board's checklists from Trello's API using your existing Trello login — the same way Trello's own website does. Items are shown on the cards according to the mode you've chosen. When you check off an item, the change is sent straight to Trello. Requests run in parallel and results are cached in memory, so boards load quickly.
 
 ## Installation
 
@@ -30,16 +33,20 @@ Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/tre
 
 The extension talks only to Trello. It reads your board's checklists and saves your check-offs through Trello's API using your existing login, and remembers your display mode in a cookie. Nothing is sent to the developer or any third party. See the full [privacy policy](PRIVACY.md).
 
-## Development
+## Support
 
-Requires Node.js 18+.
+**Checklist items are not appearing** — Make sure you're logged in to Trello and reload the page. Trello occasionally updates its website; if items still don't appear, the extension may need an update.
+
+Found a bug or have a question? Please open an issue.
+
+## Development
 
 ```bash
 npm install
 npm run build   # output in dist/
 ```
 
-Load `dist/` as an unpacked extension via `chrome://extensions` (with **Developer mode** enabled). Use `npm run dev` to rebuild on changes and `npm run typecheck` for type checking.
+Requires Node.js 18+. Load `dist/` as an unpacked extension via `chrome://extensions` (with **Developer mode** enabled). Use `npm run dev` to rebuild on changes and `npm run typecheck` for type checking.
 
 ## License
 
