@@ -8,7 +8,15 @@ View and check off Trello checklist items directly from the board — without op
 - Multiple display modes (one per card, all steps, etc.)
 - Check off and uncheck items directly from the board
 - Dark mode support
-- Fast loading with parallel API calls and smart caching
+- Fast loading with parallel API calls and in-memory caching
+
+## Installation
+
+Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/trello-next-step/ajlifdmgjhfeebokjfljnkcidfmlfjoe). Works in Chrome, Brave, Edge and other Chromium-based browsers.
+
+## Privacy
+
+The extension talks only to Trello. It reads your board's checklists and saves your check-offs through Trello's API using your existing login, and remembers your display mode in a cookie. Nothing is sent to the developer or any third party. See the full [privacy policy](PRIVACY.md).
 
 ## Development
 
@@ -65,3 +73,7 @@ src/
 │   └── index.ts      # Service worker
 manifest.json
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.

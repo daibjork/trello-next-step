@@ -1,7 +1,7 @@
 node_modules/
 dist/
 _latest/
-.claude/worktrees/
+.claude/
 *.local
 .DS_Store
 **/.DS_Store
