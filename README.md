@@ -4,11 +4,23 @@ View and check off Trello checklist items directly from the board — without op
 
 ## Features
 
-- Displays checklist items on Trello cards
-- Multiple display modes (one per card, all steps, etc.)
-- Check off and uncheck items directly from the board
-- Dark mode support
-- Fast loading with parallel API calls and in-memory caching
+- Shows checklist items right on the cards on your board
+- Check off and uncheck items directly from the board — changes are saved to Trello immediately
+- Choose what to show with the toolbar button (your choice is remembered):
+
+  | Mode | Shows |
+  |---|---|
+  | Hidden | No checklist items |
+  | Show next step per card | The first incomplete item on each card |
+  | Show next steps on first checklist | All incomplete items from each card's first checklist |
+  | Show next steps on first checklist (incl. completed) | All items from each card's first checklist |
+  | Show next step per checklist | The first incomplete item from each checklist |
+  | Show all next steps | All incomplete items |
+  | Show all next steps (incl. completed) | All items |
+
+- Renders links and inline code in item names
+- Supports Trello's light and dark themes
+- Fast loading with parallel requests and in-memory caching
 
 ## Installation
 
@@ -20,59 +32,14 @@ The extension talks only to Trello. It reads your board's checklists and saves y
 
 ## Development
 
-### Prerequisites
-
-- Node.js 18+
-- npm
-
-### Setup
+Requires Node.js 18+.
 
 ```bash
 npm install
+npm run build   # output in dist/
 ```
 
-### Build
-
-```bash
-# Watch mode (rebuilds on file changes)
-npm run dev
-
-# Production build
-npm run build
-```
-
-### Load in Chrome
-
-1. Run `npm run build`
-2. Open `chrome://extensions`
-3. Enable **Developer mode**
-4. Click **Load unpacked**
-5. Select the `dist/` folder
-
-### Type checking
-
-```bash
-npm run typecheck
-```
-
-## Project structure
-
-```
-src/
-├── content/
-│   ├── index.ts      # Main entry point and polling loop
-│   ├── api.ts        # Trello API calls
-│   ├── modes.ts      # Display modes and item filtering
-│   ├── renderer.ts   # DOM rendering
-│   ├── markdown.ts   # Markdown rendering for item names
-│   ├── prefs.ts      # User preferences (cookie-based)
-│   ├── toolbar.ts    # Toolbar button and mode popup
-│   ├── styles.css    # Card and UI styling
-│   └── types.ts      # TypeScript types
-├── background/
-│   └── index.ts      # Service worker
-manifest.json
-```
+Load `dist/` as an unpacked extension via `chrome://extensions` (with **Developer mode** enabled). Use `npm run dev` to rebuild on changes and `npm run typecheck` for type checking.
 
 ## License
 
