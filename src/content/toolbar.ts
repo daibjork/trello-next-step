@@ -158,9 +158,6 @@ function buildPopup(btn: HTMLElement, onModeChange: () => void): HTMLElement {
       popup.dispatchEvent(new Event('tns-close'))
       popup.remove()
       btn.classList.remove('tns-active')
-      btn.style.removeProperty('--dynamic-button')
-      btn.style.removeProperty('--dynamic-button-hovered')
-      btn.style.removeProperty('--dynamic-text')
     } else {
       positionPopup(popup, btn)
     }
@@ -185,11 +182,7 @@ function buildPopup(btn: HTMLElement, onModeChange: () => void): HTMLElement {
       setMode(mode)
       window.removeEventListener('resize', onResize)
       popup.remove()
-      // Clean up active state before triggering refresh
       btn.classList.remove('tns-active')
-      btn.style.removeProperty('--dynamic-button')
-      btn.style.removeProperty('--dynamic-button-hovered')
-      btn.style.removeProperty('--dynamic-text')
       onModeChange()
     })
   })
@@ -201,20 +194,35 @@ function buildPopup(btn: HTMLElement, onModeChange: () => void): HTMLElement {
 // Install
 // ----------------------------------------------------------
 
+function findHeaderContainer(): Element | null {
+  // New Trello UI (React, 2024+): find buttons group via a stable data-testid anchor
+  const filterBtn = document.querySelector('[data-testid="filter-popover-button"]')
+  if (filterBtn?.parentElement?.parentElement) return filterBtn.parentElement.parentElement
+
+  // Fallback: second child of board-header (right-side section)
+  const boardHeader = document.querySelector('[data-testid="board-header"]')
+  if (boardHeader?.children.length) return boardHeader.children[boardHeader.children.length - 1]
+
+  // Legacy Trello UI
+  return document.getElementsByClassName('board-header-btns')[0] ?? null
+}
+
 export function installToolbar(onModeChange: () => void): void {
-  const headerBtns = document.getElementsByClassName('board-header-btns')[0]
+  const headerBtns = findHeaderContainer()
   if (!headerBtns) return
 
-  const btn = document.createElement('a')
+  const btn = document.createElement('button')
   btn.id = BTN_ID
-  btn.className = 'board-header-btn board-header-btn-without-icon'
+  btn.type = 'button'
+  btn.setAttribute('aria-label', 'Trello Next Step')
   btn.innerHTML = `
-    <span class="board-header-btn-text">
-      <svg class="tns-btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="1.5" y="1.5" width="13" height="13" rx="2"/>
-        <polyline points="4,8.5 6.5,11.5 12,5" stroke-width="2"/>
-      </svg>
-    </span>`
+    <svg class="tns-btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="1.5" y="1.5" width="13" height="13" rx="2"/>
+      <polyline points="4,8.5 6.5,11.5 12,5" stroke-width="2"/>
+    </svg>`
+
+  const wrapper = document.createElement('span')
+  wrapper.appendChild(btn)
 
   setupTooltip(btn)
 
@@ -225,14 +233,8 @@ export function installToolbar(onModeChange: () => void): void {
     if (existing) {
       existing.remove()
       btn.classList.remove('tns-active')
-      btn.style.removeProperty('--dynamic-button')
-      btn.style.removeProperty('--dynamic-button-hovered')
-      btn.style.removeProperty('--dynamic-text')
     } else {
       btn.classList.add('tns-active')
-      btn.style.setProperty('--dynamic-button', 'rgb(220, 223, 228)')
-      btn.style.setProperty('--dynamic-button-hovered', '#FFFFFF')
-      btn.style.setProperty('--dynamic-text', 'rgb(23, 43, 77)')
       const popup = buildPopup(btn, onModeChange)
       document.body.appendChild(popup)
 
@@ -242,9 +244,6 @@ export function installToolbar(onModeChange: () => void): void {
             popup.dispatchEvent(new Event('tns-close'))
             popup.remove()
             btn.classList.remove('tns-active')
-            btn.style.removeProperty('--dynamic-button')
-            btn.style.removeProperty('--dynamic-button-hovered')
-            btn.style.removeProperty('--dynamic-text')
             document.removeEventListener('click', closePopup)
           }
         })
@@ -252,6 +251,6 @@ export function installToolbar(onModeChange: () => void): void {
     }
   })
 
-  headerBtns.appendChild(btn)
+  headerBtns.appendChild(wrapper)
 }
 
