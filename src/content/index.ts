@@ -1,62 +1,53 @@
-import { fetchCards, fetchChecklists, updateCheckItem, getToken, getBoardId } from './api'
+import { fetchCardsWithChecklists, updateCheckItem, getToken, getBoardId } from './api'
 import { MODES } from './modes'
 import { getMode } from './prefs'
-import { findCardElement, renderItems, invalidateCard } from './renderer'
-import { isToolbarInstalled, installToolbar } from './toolbar'
+import {
+  indexCardElements,
+  shortUrlKey,
+  renderItems,
+  removeMisplacedTaskLists,
+} from './renderer'
+import { isToolbarInstalled, installToolbar, ensureToolbarPosition } from './toolbar'
 import type { CardData } from './types'
 
-// State
+const RETRY_DELAY_MS = 5000
+
 let token: string | null = null
+let tokenRequested = false
 let cache: CardData[] | null = null
-let needsRefresh: boolean | { cardUrls: string[] } = true
 let isRefreshing = false
+let lastFetchFailedAt = 0
 let lastUrl = window.location.href
+let scheduled = false
 
 // ----------------------------------------------------------------
 // Board data loading
 // ----------------------------------------------------------------
 
-async function loadBoardData(refresh: boolean | { cardUrls: string[] }): Promise<void> {
+async function loadBoardData(): Promise<void> {
   if (isRefreshing) return
+  if (Date.now() - lastFetchFailedAt < RETRY_DELAY_MS) return
   isRefreshing = true
 
+  const boardId = getBoardId()
   try {
-    // Use cache for DOM-only re-renders
-    if (cache && refresh === true) {
-      renderBoard(cache)
-      return
-    }
+    const cards = await fetchCardsWithChecklists(boardId)
+    // Board changed while the request was in flight
+    if (boardId !== getBoardId()) return
 
-    const [cards, checklists] = await Promise.all([fetchCards(), fetchChecklists()])
-
-    // Map checklists to cards
-    const cardMap = new Map(cards.map(c => [c.id, c.shortUrl]))
-    const grouped = new Map<string, CardData>()
-
-    for (const checklist of checklists) {
-      const shortUrl = cardMap.get(checklist.idCard)
-      if (!shortUrl) continue
-      if (!grouped.has(shortUrl)) {
-        grouped.set(shortUrl, { shortUrl, checklists: [] })
-      }
-      grouped.get(shortUrl)!.checklists.push(checklist)
-    }
-
-    cache = [...grouped.values()]
-
-    // Filter to specific cards if needed
-    let toRender = cache
-    if (typeof refresh === 'object' && refresh.cardUrls) {
-      const shortUrls = new Set(refresh.cardUrls.map(u => u.split('/').slice(0, 5).join('/')))
-      toRender = cache.filter(c => shortUrls.has(c.shortUrl))
-    }
-
-    renderBoard(toRender)
+    cache = cards
+      .filter(c => c.checklists.length > 0)
+      .map(c => ({ shortUrl: c.shortUrl, checklists: c.checklists }))
   } catch (err) {
+    lastFetchFailedAt = Date.now()
     console.error('[TrelloNextStep] Failed to load board data:', err)
+    setTimeout(schedule, RETRY_DELAY_MS)
+    return
   } finally {
     isRefreshing = false
   }
+
+  schedule()
 }
 
 // ----------------------------------------------------------------
@@ -66,9 +57,10 @@ async function loadBoardData(refresh: boolean | { cardUrls: string[] }): Promise
 function renderBoard(cards: CardData[]): void {
   const mode = MODES[getMode()]
   const showCompleted = mode.showCompleted ?? false
+  const elements = indexCardElements()
 
   for (const card of cards) {
-    const el = findCardElement(card.shortUrl)
+    const el = elements.get(shortUrlKey(card.shortUrl))
     if (!el) continue
     const items = mode.handler(card.checklists, showCompleted)
     renderItems(el, items, handleCheckboxClick)
@@ -91,78 +83,95 @@ function handleCheckboxClick(checkbox: Element): void {
   const cardId = item.dataset.cardId ?? ''
   const checklistId = item.dataset.checklistId ?? ''
   const itemId = item.dataset.itemId ?? ''
-  const cardUrl = item.dataset.cardUrl ?? ''
   const isComplete = item.classList.contains('tns-complete')
   const newState = isComplete ? 'incomplete' : 'complete'
 
-  item.classList.toggle('tns-complete', !isComplete)
-  item.classList.toggle('tns-checking', true)
+  const checkItem = cache
+    ?.flatMap(c => c.checklists)
+    .find(cl => cl.id === checklistId)
+    ?.checkItems.find(ci => ci.id === itemId)
 
-  updateCheckItem(cardId, checklistId, itemId, newState, token)
-    .then(() => {
-      item.classList.remove('tns-checking')
-      cache = null
-      invalidateCard(item)
-      needsRefresh = { cardUrls: [cardUrl] }
-    })
-    .catch(() => {
-      // Revert on failure
-      item.classList.toggle('tns-complete', isComplete)
-      item.classList.remove('tns-checking')
-    })
+  // Update cache and UI immediately; sync with Trello in the background
+  const applyState = (state: 'complete' | 'incomplete') => {
+    if (checkItem && cache) {
+      checkItem.state = state
+      renderBoard(cache)
+      observer.takeRecords()
+    } else {
+      item.classList.toggle('tns-complete', state === 'complete')
+    }
+  }
+
+  applyState(newState)
+
+  updateCheckItem(cardId, checklistId, itemId, newState, token).catch(() => {
+    applyState(isComplete ? 'complete' : 'incomplete')
+  })
 }
 
 // ----------------------------------------------------------------
-// Main loop (500ms polling)
+// Update loop: runs only when Trello's DOM changes (MutationObserver),
+// coalesced to at most one pass per animation frame.
 // ----------------------------------------------------------------
 
-let refreshCounter = 0
+function schedule(): void {
+  if (scheduled) return
+  scheduled = true
+  requestAnimationFrame(update)
+}
 
-function tick(): void {
-  // Detect board/page navigation
+function update(): void {
+  scheduled = false
+  if (document.hidden) return
+
   const currentUrl = window.location.href
   if (currentUrl !== lastUrl) {
     lastUrl = currentUrl
     cache = null
-    needsRefresh = true
   }
 
-  const onBoardPage =
-    'body' in document &&
-    window.location.href.startsWith('https://trello.com/b/')
+  if (!currentUrl.startsWith('https://trello.com/b/')) return
 
-  if (!onBoardPage) {
-    if (!needsRefresh) needsRefresh = true
-    return
-  }
-
-  // Get token if we don't have one
   if (!token) {
-    getToken().then(t => { if (t) token = t })
+    if (!tokenRequested) {
+      tokenRequested = true
+      getToken().then(t => {
+        tokenRequested = false
+        if (t) {
+          token = t
+          schedule()
+        } else {
+          setTimeout(schedule, 1000)
+        }
+      })
+    }
     return
   }
 
-  // Install toolbar if missing
-  if (!isToolbarInstalled()) {
+  if (isToolbarInstalled()) {
+    ensureToolbarPosition()
+  } else {
     installToolbar(() => {
-      cache = null
-      needsRefresh = true
+      // Mode change only needs a re-render from cache, not a refetch
+      schedule()
     })
+  }
+
+  removeMisplacedTaskLists()
+
+  if (!cache) {
+    void loadBoardData()
     return
   }
 
-  // Periodic re-render to catch drag-and-drop card moves
-  refreshCounter++
-  if (refreshCounter >= 1) {
-    refreshCounter = 0
-    needsRefresh = true
-  }
-
-  if (needsRefresh && !isRefreshing) {
-    const toRefresh = needsRefresh
-    needsRefresh = false
-    loadBoardData(toRefresh)
-  }
+  renderBoard(cache)
+  // Drop mutations caused by our own rendering so we don't loop
+  observer.takeRecords()
 }
 
-setInterval(tick, 500)
+const observer = new MutationObserver(schedule)
+
+observer.observe(document.documentElement, { childList: true, subtree: true })
+document.addEventListener('visibilitychange', schedule)
+window.addEventListener('popstate', schedule)
+schedule()

@@ -18,13 +18,11 @@ export function getBoardId(url = window.location.href): string {
   return url.split('/')[4] ?? ''
 }
 
-export async function fetchCards(boardId = getBoardId()): Promise<TrelloCard[]> {
-  const res = await fetchTrello(`boards/${boardId}/cards?filter=open&fields=id,shortUrl`)
-  return res.json()
-}
-
-export async function fetchChecklists(boardId = getBoardId()): Promise<TrelloChecklist[]> {
-  const res = await fetchTrello(`boards/${boardId}/checklists?cards=open&card_fields=shortUrl`)
+export async function fetchCardsWithChecklists(
+  boardId = getBoardId()
+): Promise<Array<TrelloCard & { checklists: TrelloChecklist[] }>> {
+  const res = await fetchTrello(`boards/${boardId}/cards?filter=open&fields=shortUrl&checklists=all`)
+  if (!res.ok) throw new Error(`Trello API responded ${res.status}`)
   return res.json()
 }
 
@@ -36,7 +34,7 @@ export async function updateCheckItem(
   token: string
 ): Promise<void> {
   const body = `state=${state}&dsc=${token.trim()}`
-  await fetchTrello(
+  const res = await fetchTrello(
     `cards/${cardId}/checklist/${checklistId}/checkItem/${itemId}`,
     {
       method: 'PUT',
@@ -46,6 +44,7 @@ export async function updateCheckItem(
       body,
     }
   )
+  if (!res.ok) throw new Error(`Trello API responded ${res.status}`)
 }
 
 export async function getToken(): Promise<string | null> {

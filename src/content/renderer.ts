@@ -7,22 +7,49 @@ const CHECKBOX_CLASS = 'tns-checkbox'
 const LABEL_CLASS = 'tns-label'
 const RENDERED_ATTR = 'data-tns-rendered'
 
-export function findCardElement(shortUrl: string): Element | null {
-  const path = shortUrl.split('.com')[1]
-  if (!path) return null
+function cardPathKey(href: string | null): string {
+  if (!href) return ''
+  const path = href.startsWith('http') ? new URL(href).pathname : href
+  return path.split('/').slice(0, 3).join('/')
+}
 
-  // Try both old and new Trello DOM structures
-  const selectors = [
-    `a[href^="${path}"][data-testid="card-name"]`,
-    `.list-card[href^="${path}"] .list-card-title`,
-  ]
+export function shortUrlKey(shortUrl: string): string {
+  return shortUrl.split('.com')[1] ?? ''
+}
 
-  for (const selector of selectors) {
-    const el = document.querySelector(selector)
-    if (el) return el
+// One DOM pass instead of one querySelector per card
+export function indexCardElements(): Map<string, Element> {
+  const map = new Map<string, Element>()
+  document.querySelectorAll('a[data-testid="card-name"]').forEach(a => {
+    map.set(cardPathKey(a.getAttribute('href')), a)
+  })
+  // Legacy Trello DOM
+  document.querySelectorAll('.list-card[href]').forEach(card => {
+    const title = card.querySelector('.list-card-title')
+    if (title) map.set(cardPathKey(card.getAttribute('href')), title)
+  })
+  return map
+}
+
+// Remove lists left behind where Trello's DOM was still being built
+export function removeMisplacedTaskLists(): void {
+  document.querySelectorAll(`.${TASK_LIST_CLASS}`).forEach(list => {
+    const hasTitleSibling = list.parentElement?.querySelector(
+      ':scope > a[data-testid="card-name"], :scope > .list-card-title'
+    )
+    if (!hasTitleSibling) list.remove()
+  })
+}
+
+const markdownCache = new Map<string, string>()
+
+function cachedMarkdown(text: string): string {
+  let html = markdownCache.get(text)
+  if (html === undefined) {
+    html = renderMarkdown(text)
+    markdownCache.set(text, html)
   }
-
-  return null
+  return html
 }
 
 export function getCardUrl(cardNameElement: Element): string {
@@ -40,7 +67,7 @@ function renderItem(item: ChecklistItem): string {
          data-checklist-id="${item.checklistId}"
          data-item-id="${item.id}">
       <span class="${CHECKBOX_CLASS}" role="checkbox" aria-checked="${item.state === 'complete'}" tabindex="0"></span>
-      <span class="${LABEL_CLASS}">${renderMarkdown(item.name)}</span>
+      <span class="${LABEL_CLASS}">${cachedMarkdown(item.name)}</span>
     </div>`
 }
 

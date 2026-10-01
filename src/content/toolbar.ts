@@ -195,16 +195,42 @@ function buildPopup(btn: HTMLElement, onModeChange: () => void): HTMLElement {
 // ----------------------------------------------------------
 
 function findHeaderContainer(): Element | null {
-  // New Trello UI (React, 2024+): find buttons group via a stable data-testid anchor
-  const filterBtn = document.querySelector('[data-testid="filter-popover-button"]')
-  if (filterBtn?.parentElement?.parentElement) return filterBtn.parentElement.parentElement
+  // New Trello UI: data-testid may be on the wrapper span or on the button inside it
+  const filterAnchor = document.querySelector('[data-testid="filter-popover-button"]')
+  if (filterAnchor) {
+    // If data-testid is on the wrapper itself, its parent is the container
+    // If data-testid is on the button inside the wrapper, grandparent is the container
+    const candidate = filterAnchor.parentElement
+    if (candidate && candidate.children.length > 1) return candidate
+    if (candidate?.parentElement && candidate.parentElement.children.length > 1) return candidate.parentElement
+  }
 
-  // Fallback: second child of board-header (right-side section)
+  // Fallback: last child of board-header (right-side section)
   const boardHeader = document.querySelector('[data-testid="board-header"]')
   if (boardHeader?.children.length) return boardHeader.children[boardHeader.children.length - 1]
 
   // Legacy Trello UI
   return document.getElementsByClassName('board-header-btns')[0] ?? null
+}
+
+// The share button's ancestor that is a direct child of the container
+function findShareAnchor(container: Element): Element | null {
+  let anchor: Element | null = container.querySelector('[data-testid="board-share-button"]')
+  while (anchor && anchor.parentElement !== container) {
+    anchor = anchor.parentElement
+  }
+  return anchor
+}
+
+// Trello re-renders the header after load and can leave our button misplaced
+export function ensureToolbarPosition(): void {
+  const wrapper = document.getElementById(BTN_ID)?.parentElement
+  const container = wrapper?.parentElement
+  if (!wrapper || !container) return
+  const shareAnchor = findShareAnchor(container)
+  if (shareAnchor && wrapper.nextElementSibling !== shareAnchor) {
+    container.insertBefore(wrapper, shareAnchor)
+  }
 }
 
 export function installToolbar(onModeChange: () => void): void {
@@ -251,6 +277,11 @@ export function installToolbar(onModeChange: () => void): void {
     }
   })
 
-  headerBtns.appendChild(wrapper)
+  const shareAnchor = findShareAnchor(headerBtns)
+  if (shareAnchor) {
+    headerBtns.insertBefore(wrapper, shareAnchor)
+  } else {
+    headerBtns.appendChild(wrapper)
+  }
 }
 
